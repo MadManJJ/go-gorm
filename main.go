@@ -59,18 +59,9 @@ func main() {
 	db.AutoMigrate(&Book{}) // AutoMigrate will not delete col, it can only create col
 	fmt.Println("Migrate succesfull")
 
-	// * Update Book
-	// currentBook := getBook(db, 1) // getBook return an address
-
-	// currentBook.Name = "BOBA JOHN"
-	// currentBook.Price = 440
-
-	// updateBook(db, currentBook)
-	// * --------------------------------
-
 	// * Create Book
 	// createBook(db, &Book{
-	// 	Name: "suzy",
+	// 	Name: "JABE",
 	// 	Author: "john",
 	// 	Price: 400,
 	// 	Description: "Test",
@@ -82,8 +73,22 @@ func main() {
 	// fmt.Println(currentBook)
 	// * --------------------------------
 
+	// * Update Book
+	// currentBook := getBook(db, 1) // getBook return an address
+
+	// currentBook.Name = "BOBA JOHN"
+	// currentBook.Price = 440
+
+	// updateBook(db, currentBook)
+	// * --------------------------------
+
 	// * Delete Book
-	deleteBook(db, 1)
+	// deleteBook(db, 1)
+	// * --------------------------------
+	
+	// * Search Book
+	currentBook := searchBook(db, "suzy")
+	fmt.Println(currentBook)
 	// * --------------------------------
 
 	// currentBook := getBook(db, 1)

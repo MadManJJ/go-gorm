@@ -57,11 +57,23 @@ func updateBook(db *gorm.DB, book *Book) {
 func deleteBook(db *gorm.DB, id uint) {
 	var book Book
 	result := db.Delete(&book, id) // ! soft delete if we have DeletedAt gorm.DeletedAt `gorm:"index"`, but hard delete if we don't
-	// result := db.Unscoped().Delete(&book, id) // ! Permanet Delete
+	// result := db.Unscoped().Delete(&book, id) // ! Permanet Delete even if we have DeletedAt gorm.DeletedAt `gorm:"index"`
 
 	if result.Error != nil {
 		log.Fatalf("Delete book failed: %v", result.Error)
 	}
 
 	fmt.Println("Delete Book Successful")
+}
+
+func searchBook(db *gorm.DB, bookName string) *Book {
+	var book Book
+
+	result := db.Where("name = ?", bookName).First(&book)
+
+	if result.Error != nil {
+		log.Fatalf("Search book failed: %v", result.Error)
+	}
+
+	return &book
 }
