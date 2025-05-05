@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"gorm.io/gorm"
@@ -17,20 +16,20 @@ import (
 
 type Book struct {
 	gorm.Model
-	Name        string
-	Author      string
-	Description string
-	Price       uint
+	Name        string `json:"name"`
+	Author      string `json:"author"`
+	Description string `json:"description"`
+	Price       uint `json:"price"`
 }
 
-func createBook(db *gorm.DB, book *Book) {
+func createBook(db *gorm.DB, book *Book) error {
 	result := db.Create(book)
 
 	if result.Error != nil {
-		log.Fatalf("Error creating book: %v", result.Error)
+		return result.Error
 	}
 
-	fmt.Println("Create Book Successful")
+	return nil
 }
 
 func getBook(db *gorm.DB, id int) *Book {
@@ -44,36 +43,47 @@ func getBook(db *gorm.DB, id int) *Book {
 	return &book
 }
 
-func updateBook(db *gorm.DB, book *Book) {
-	result := db.Save(book)
+func getBooks(db *gorm.DB) []Book {
+	var books []Book
+	result := db.Find(&books)
 
 	if result.Error != nil {
-		log.Fatalf("Update book failed: %v", result.Error)
+		log.Fatalf("Error get books: %v", result.Error)
 	}
 
-	fmt.Println("Update Book Successful")
+	return books
 }
 
-func deleteBook(db *gorm.DB, id uint) {
+func updateBook(db *gorm.DB, book *Book) error {	
+	result := db.Model(&book).Updates(book) // * update only the selected field (from the book)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
+func deleteBook(db *gorm.DB, id int) error {
 	var book Book
 	result := db.Delete(&book, id) // ! soft delete if we have DeletedAt gorm.DeletedAt `gorm:"index"`, but hard delete if we don't
 	// result := db.Unscoped().Delete(&book, id) // ! Permanet Delete even if we have DeletedAt gorm.DeletedAt `gorm:"index"`
 
 	if result.Error != nil {
-		log.Fatalf("Delete book failed: %v", result.Error)
+		return result.Error
 	}
 
-	fmt.Println("Delete Book Successful")
+	return nil
 }
 
-func searchBook(db *gorm.DB, bookName string) *Book {
-	var book Book
+func searchBook(db *gorm.DB, bookName string) []Book { // * slice normally is already an address
+	var books []Book
 
-	result := db.Where("name = ?", bookName).First(&book)
+	result := db.Where("name = ?", bookName).Order("price desc").Find(&books)
 
 	if result.Error != nil {
 		log.Fatalf("Search book failed: %v", result.Error)
 	}
 
-	return &book
+	return books
 }

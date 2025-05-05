@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 
 	"gorm.io/driver/postgres"
@@ -56,14 +58,89 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&Book{}) // AutoMigrate will not delete col, it can only create col
-	fmt.Println("Migrate succesfull")
+	db.AutoMigrate(&Book{}) // * AutoMigrate will not delete col, it can only create col
+
+	app := fiber.New()
+
+	app.Get("/books", func(c *fiber.Ctx) error {
+			return c.JSON(getBooks(db))
+	})
+
+	app.Get("/books/:id", func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		book := getBook(db, id)
+		return c.JSON(book)
+	})
+
+	app.Post("/books", func(c *fiber.Ctx) error {
+		book := new(Book) // * book is a pointer
+		// var book Book // * book is a regular value
+
+		if err := c.BodyParser(book); err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		err := createBook(db, book)
+
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		return c.JSON(fiber.Map{
+			"message" : "Create Book Successful",
+		})
+	})
+
+	app.Put("/books/:id", func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		book := new(Book)
+
+		if err := c.BodyParser(book); err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		book.ID = uint(id)
+
+		err = updateBook(db, book)
+
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		return c.JSON(fiber.Map{
+			"message" : "Update Book Successful",
+		})
+	})
+
+	app.Delete("/books/:id", func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		err = deleteBook(db, id)
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		return c.JSON(fiber.Map{
+			"message" : "Delete Book Successful",
+		})
+	})
+
+	app.Listen(":8080")
 
 	// * Create Book
 	// createBook(db, &Book{
-	// 	Name: "JABE",
-	// 	Author: "john",
-	// 	Price: 400,
+	// 	Name: "suzy",
+	// 	Author: "kkk",
+	// 	Price: 200,
 	// 	Description: "Test",
 	// })
 	// * --------------------------------
@@ -87,10 +164,7 @@ func main() {
 	// * --------------------------------
 	
 	// * Search Book
-	currentBook := searchBook(db, "suzy")
-	fmt.Println(currentBook)
-	// * --------------------------------
-
-	// currentBook := getBook(db, 1)
+	// currentBook := searchBook(db, "suzy")
 	// fmt.Println(currentBook)
+	// * --------------------------------
 }
