@@ -58,7 +58,7 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&Book{}) // * AutoMigrate won't delete col, it can only create col
+	db.AutoMigrate(&Book{}, &User{}) // * AutoMigrate won't delete col, it can only create col
 
 	app := fiber.New()
 
@@ -143,6 +143,24 @@ func main() {
 
 		return c.JSON(fiber.Map{
 			"message" : "Delete Book Successful",
+		})
+	})
+
+	app.Post("/register", func(c *fiber.Ctx) error {
+		user := new(User)
+
+		if err := c.BodyParser(user); err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		err = createUser(db, user)
+
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		
+		return c.JSON(fiber.Map{
+			"message" : "Register Successful",
 		})
 	})
 
