@@ -58,10 +58,13 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&Book{}) // * AutoMigrate will not delete col, it can only create col
+	db.AutoMigrate(&Book{}) // * AutoMigrate won't delete col, it can only create col
 
 	app := fiber.New()
 
+	// * @desc Get All Books
+	// * @route GET /books
+	// * @access Public
 	app.Get("/books", func(c *fiber.Ctx) error {
 			return c.JSON(getBooks(db))
 	})
@@ -75,6 +78,9 @@ func main() {
 		return c.JSON(book)
 	})
 
+	// * @desc Create Book
+	// * @route POST /books
+	// * @access Public
 	app.Post("/books", func(c *fiber.Ctx) error {
 		book := new(Book) // * book is a pointer
 		// var book Book // * book is a regular value
@@ -94,6 +100,9 @@ func main() {
 		})
 	})
 
+	// * @desc Update Book
+	// * @route POST /books/:id
+	// * @access Public
 	app.Put("/books/:id", func(c *fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
@@ -118,6 +127,9 @@ func main() {
 		})
 	})
 
+	// * @desc Delete Book
+	// * @route DELETE /books/:id
+	// * @access Public
 	app.Delete("/books/:id", func(c *fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
