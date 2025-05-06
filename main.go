@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 
 	"gorm.io/driver/postgres"
@@ -35,6 +36,22 @@ var (
 	password     string
 )
 
+func authRequired(c *fiber.Ctx) error {
+	cookie := c.Cookies("jwt")
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+  token, err := jwt.ParseWithClaims(cookie, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(jwtSecretKey), nil
+	})
+
+	if err != nil || !token.Valid {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	claim := token.Claims.(jwt.MapClaims)
+
+	fmt.Println(claim["user_id"])
+	return c.Next()
+}
+
 func main() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
   "password=%s dbname=%s sslmode=disable",
@@ -61,6 +78,7 @@ func main() {
 	db.AutoMigrate(&Book{}, &User{}) // * AutoMigrate won't delete col, it can only create col
 
 	app := fiber.New()
+	app.Use("/books", authRequired) // * Middleware
 
 	// * @desc Get All Books
 	// * @route GET /books
