@@ -79,7 +79,7 @@ func deleteBook(db *gorm.DB, id int) error {
 func searchBook(db *gorm.DB, bookName string) []Book { // * slice normally is already an address
 	var books []Book
 
-	result := db.Where("name = ?", bookName).Order("price desc").Find(&books)
+	result := db.Where("name = ?", bookName).Order("price desc").Find(&books) // * pass a pointer so that gorm can modify the books and fill it.
 
 	if result.Error != nil {
 		log.Fatalf("Search book failed: %v", result.Error)

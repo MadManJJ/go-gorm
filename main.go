@@ -164,6 +164,30 @@ func main() {
 		})
 	})
 
+	app.Post("/login", func(c *fiber.Ctx) error {
+		user := new(User)
+
+		if err := c.BodyParser(user); err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		token, err := loginUser(db, user)
+
+		if err != nil {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		c.Cookie(&fiber.Cookie{
+			Name:     "jwt",
+			Value:    token,
+			Expires:  time.Now().Add(time.Hour * 72),
+			HTTPOnly: true,
+		})
+
+		return c.JSON(fiber.Map{
+			"message" : "Login successful",
+		})
+	})
+
 	app.Listen(":8080")
 
 	// * Create Book
