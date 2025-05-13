@@ -15,6 +15,11 @@ type User struct {
 	Password string
 }
 
+type UserDTO struct {
+	Email string `gorm:"unique"`
+	Password string
+}
+
 func createUser(db *gorm.DB, user *User) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 

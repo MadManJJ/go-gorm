@@ -22,6 +22,13 @@ type Book struct {
 	Price       uint `json:"price"`
 }
 
+type BookDTO struct {
+	Name        string `json:"name" example:"Harry Potter"`
+	Author      string `json:"author" example:"J.K. Rowling"`
+	Description string `json:"description" example:"A wizarding world book"`
+	Price       uint   `json:"price" example:"199"`
+}
+
 func createBook(db *gorm.DB, book *Book) error {
 	result := db.Create(book)
 
@@ -55,7 +62,7 @@ func getBooks(db *gorm.DB) []Book {
 }
 
 func updateBook(db *gorm.DB, book *Book) error {	
-	result := db.Model(&book).Updates(book) // * update only the selected field (from the book)
+	result := db.Model(book).Updates(book) // * update only the selected field (from the book)
 
 	if result.Error != nil {
 		return result.Error

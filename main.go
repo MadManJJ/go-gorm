@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	_ "github.com/MadManJJ/go-gorm/docs"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/swagger"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 
@@ -34,24 +36,50 @@ var (
 	databaseName string
 	username     string
 	password     string
+	gormdb *gorm.DB
 )
 
 func authRequired(c *fiber.Ctx) error {
-	cookie := c.Cookies("jwt")
-	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
-  token, err := jwt.ParseWithClaims(cookie, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(jwtSecretKey), nil
-	})
+    // First check for JWT in Authorization header
+    tokenStr := c.Get("Authorization")
+    if tokenStr == "" {
+        // Fallback to cookie if no Authorization header is provided
+        tokenStr = c.Cookies("jwt")
+    }
+    if tokenStr == "" {
+        return c.SendStatus(fiber.StatusUnauthorized)
+    }
 
-	if err != nil || !token.Valid {
-		return c.SendStatus(fiber.StatusUnauthorized)
-	}
-	claim := token.Claims.(jwt.MapClaims)
+    // Strip "Bearer " if it's in the Authorization header
+    if len(tokenStr) > 7 && tokenStr[:7] == "Bearer " {
+        tokenStr = tokenStr[7:]
+    }
 
-	fmt.Println(claim["user_id"])
-	return c.Next()
+    jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+    token, err := jwt.ParseWithClaims(tokenStr, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+        return []byte(jwtSecretKey), nil
+    })
+
+    if err != nil || !token.Valid {
+        return c.SendStatus(fiber.StatusUnauthorized)
+    }
+
+    claim := token.Claims.(jwt.MapClaims)
+    fmt.Println(claim["user_id"])
+
+    return c.Next()
 }
 
+
+// @title Book API
+// @description This is a sample server for a book API.
+// @version 1.0
+// @host localhost:8080
+// @BasePath /
+// @schemes http
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
   "password=%s dbname=%s sslmode=disable",
@@ -74,18 +102,15 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-
-	db.AutoMigrate(&Book{}, &User{}) // * AutoMigrate won't delete col, it can only create col
+	gormdb = db
+	gormdb.AutoMigrate(&Book{}, &User{}) // * AutoMigrate won't delete col, it can only create col
 
 	app := fiber.New()
+	app.Get("/swagger/*", swagger.HandlerDefault)
+	
 	app.Use("/books", authRequired) // * Middleware
 
-	// * @desc Get All Books
-	// * @route GET /books
-	// * @access Public
-	app.Get("/books", func(c *fiber.Ctx) error {
-			return c.JSON(getBooks(db))
-	})
+	app.Get("/books", GetBooks)
 
 	app.Get("/books/:id", func(c *fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
@@ -96,9 +121,6 @@ func main() {
 		return c.JSON(book)
 	})
 
-	// * @desc Create Book
-	// * @route POST /books
-	// * @access Public
 	app.Post("/books", func(c *fiber.Ctx) error {
 		book := new(Book) // * book is a pointer
 		// var book Book // * book is a regular value
@@ -118,9 +140,6 @@ func main() {
 		})
 	})
 
-	// * @desc Update Book
-	// * @route POST /books/:id
-	// * @access Public
 	app.Put("/books/:id", func(c *fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
@@ -145,9 +164,6 @@ func main() {
 		})
 	})
 
-	// * @desc Delete Book
-	// * @route DELETE /books/:id
-	// * @access Public
 	app.Delete("/books/:id", func(c *fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
@@ -182,29 +198,7 @@ func main() {
 		})
 	})
 
-	app.Post("/login", func(c *fiber.Ctx) error {
-		user := new(User)
-
-		if err := c.BodyParser(user); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		token, err := loginUser(db, user)
-
-		if err != nil {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
-
-		c.Cookie(&fiber.Cookie{
-			Name:     "jwt",
-			Value:    token,
-			Expires:  time.Now().Add(time.Hour * 72),
-			HTTPOnly: true,
-		})
-
-		return c.JSON(fiber.Map{
-			"message" : "Login successful",
-		})
-	})
+	app.Post("/login", LoginUser)
 
 	app.Listen(":8080")
 
@@ -239,4 +233,61 @@ func main() {
 	// currentBook := searchBook(db, "suzy")
 	// fmt.Println(currentBook)
 	// * --------------------------------
+}
+
+// GetBooks godoc
+// @Summary Get all books
+// @Description Get details of all books
+// @Tags books
+// @Accept  json
+// @Produce  json
+// @Security ApiKeyAuth
+// @Success 200 {array} BookDTO
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Router /books [get]
+func GetBooks(c *fiber.Ctx) error {
+	return c.JSON(getBooks(gormdb))
+}
+
+// LoginUser godoc
+// @Summary User login
+// @Description Authenticate user and return JWT token
+// @Tags auth
+// @Accept  json
+// @Produce  json
+// @Param book body UserDTO true "User DTO"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /login [post]
+func LoginUser(c *fiber.Ctx) error {
+	var dto UserDTO
+
+	if err := c.BodyParser(&dto); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	user := User{
+		Email: dto.Email,
+		Password: dto.Password,
+	}
+
+	token, err := loginUser(gormdb, &user)
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+
+	// c.Cookie(&fiber.Cookie{
+	// 	Name:     "jwt",
+	// 	Value:    token,
+	// 	Expires:  time.Now().Add(time.Hour * 72),
+	// 	HTTPOnly: true,
+	// })
+
+	return c.JSON(fiber.Map{
+		"message" : "Login successful",
+		"Token" : token,
+	})	
 }
