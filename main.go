@@ -142,10 +142,8 @@ func main() {
 
 	// * Update Book
 	// currentBook := getBook(db, 1) // getBook return an address
-
 	// currentBook.Name = "BOBA JOHN"
 	// currentBook.Price = 440
-
 	// updateBook(db, currentBook)
 	// * --------------------------------
 
