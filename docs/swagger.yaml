@@ -18,8 +18,10 @@ definitions:
   main.UserDTO:
     properties:
       email:
+        example: user@example.com
         type: string
       password:
+        example: securePassword123
         type: string
     type: object
 host: localhost:8080
@@ -51,23 +53,26 @@ paths:
           description: Unauthorized
           schema:
             type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       security:
       - ApiKeyAuth: []
       summary: Get all books
       tags:
       - books
-  /login:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return JWT token
+      description: Create book
       parameters:
-      - description: User DTO
+      - description: Book DTO
         in: body
-        name: book
+        name: Book
         required: true
         schema:
-          $ref: '#/definitions/main.UserDTO'
+          $ref: '#/definitions/main.BookDTO'
       produces:
       - application/json
       responses:
@@ -89,7 +94,186 @@ paths:
           description: Internal Server Error
           schema:
             type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create book
+      tags:
+      - books
+  /books/{bookID}:
+    delete:
+      description: Delete book
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete book
+      tags:
+      - books
+    get:
+      description: Get book by ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.BookDTO'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get book
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      description: Update book
+      parameters:
+      - description: Book ID
+        in: path
+        name: bookID
+        required: true
+        type: integer
+      - description: Book DTO
+        in: body
+        name: Book
+        required: true
+        schema:
+          $ref: '#/definitions/main.BookDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Update book
+      tags:
+      - books
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: User DTO
+        in: body
+        name: User
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: User login
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: User register
+      parameters:
+      - description: User DTO
+        in: body
+        name: User
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: User register
       tags:
       - auth
 schemes:

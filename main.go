@@ -112,91 +112,15 @@ func main() {
 
 	app.Get("/books", GetBooks)
 
-	app.Get("/books/:id", func(c *fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		book := getBook(db, id)
-		return c.JSON(book)
-	})
+	app.Get("/books/:id", GetBook)
 
-	app.Post("/books", func(c *fiber.Ctx) error {
-		book := new(Book) // * book is a pointer
-		// var book Book // * book is a regular value
+	app.Post("/books", CreateBook)
 
-		if err := c.BodyParser(book); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
+	app.Put("/books/:id", UpdateBook)
 
-		err := createBook(db, book)
+	app.Delete("/books/:id", DeleteBook)
 
-		if err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-
-		return c.JSON(fiber.Map{
-			"message" : "Create Book Successful",
-		})
-	})
-
-	app.Put("/books/:id", func(c *fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		book := new(Book)
-
-		if err := c.BodyParser(book); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-
-		book.ID = uint(id)
-
-		err = updateBook(db, book)
-
-		if err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-
-		return c.JSON(fiber.Map{
-			"message" : "Update Book Successful",
-		})
-	})
-
-	app.Delete("/books/:id", func(c *fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-
-		err = deleteBook(db, id)
-		if err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-
-		return c.JSON(fiber.Map{
-			"message" : "Delete Book Successful",
-		})
-	})
-
-	app.Post("/register", func(c *fiber.Ctx) error {
-		user := new(User)
-
-		if err := c.BodyParser(user); err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-
-		err = createUser(db, user)
-
-		if err != nil {
-			return c.SendStatus(fiber.StatusBadRequest)
-		}
-		
-		return c.JSON(fiber.Map{
-			"message" : "Register Successful",
-		})
-	})
+	app.Post("/register", Register)
 
 	app.Post("/login", LoginUser)
 
@@ -245,9 +169,159 @@ func main() {
 // @Success 200 {array} BookDTO
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
 // @Router /books [get]
 func GetBooks(c *fiber.Ctx) error {
 	return c.JSON(getBooks(gormdb))
+}
+
+// GetBook godoc
+// @Summary Get book
+// @Description Get book by ID
+// @Tags books
+// @Produce  json
+// @Security ApiKeyAuth
+// @Param bookID path int true "Book ID"
+// @Success 200 {object} BookDTO
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 404 {string} string "Not Found"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /books/{bookID} [get]
+func GetBook(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	book := getBook(gormdb, id)
+	return c.Status(fiber.StatusOK).JSON(book)
+}
+
+// CreateBook godoc
+// @Summary Create book
+// @Description Create book
+// @Tags books
+// @Accept  json
+// @Produce  json
+// @Security ApiKeyAuth
+// @Param Book body BookDTO true "Book DTO"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /books [post]
+func CreateBook(c *fiber.Ctx) error {
+	book := new(Book) // * book is a pointer
+	// var book Book // * book is a regular value
+
+	if err := c.BodyParser(book); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err := createBook(gormdb, book)
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	return c.JSON(fiber.Map{
+		"message" : "Create Book Successful",
+	})
+}
+
+// UpdateBook godoc
+// @Summary Update book
+// @Description Update book
+// @Tags books
+// @Accept  json
+// @Produce  json
+// @Security ApiKeyAuth
+// @Param bookID path int true "Book ID"
+// @Param Book body BookDTO true "Book DTO"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /books/{bookID} [put]
+func UpdateBook(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+		book := new(Book)
+
+		if err := c.BodyParser(book); err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		book.ID = uint(id)
+
+		err = updateBook(gormdb, book)
+
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		return c.JSON(fiber.Map{
+			"message" : "Update Book Successful",
+		})
+	}
+
+// DeleteBook godoc
+// @Summary Delete book
+// @Description Delete book
+// @Tags books
+// @Produce  json
+// @Security ApiKeyAuth
+// @Param bookID path int true "Book ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /books/{bookID} [delete]
+func DeleteBook(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err = deleteBook(gormdb, id)
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	return c.JSON(fiber.Map{
+		"message" : "Delete Book Successful",
+	})
+}
+
+// RegisterUser godoc
+// @Summary User register
+// @Description User register
+// @Tags auth
+// @Accept  json
+// @Produce  json
+// @Param User body UserDTO true "User DTO"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "Bad Request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /register [post]
+func Register(c *fiber.Ctx) error {
+	user := new(User)
+
+	if err := c.BodyParser(user); err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	err := createUser(gormdb, user)
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
+	}
+	
+	return c.JSON(fiber.Map{
+		"message" : "Register Successful",
+	})
 }
 
 // LoginUser godoc
@@ -256,21 +330,16 @@ func GetBooks(c *fiber.Ctx) error {
 // @Tags auth
 // @Accept  json
 // @Produce  json
-// @Param book body UserDTO true "User DTO"
+// @Param User body UserDTO true "User DTO"
 // @Success 200 {object} map[string]string
 // @Failure 400 {string} string "Bad Request"
-// @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /login [post]
 func LoginUser(c *fiber.Ctx) error {
-	var dto UserDTO
+	var user User
 
-	if err := c.BodyParser(&dto); err != nil {
+	if err := c.BodyParser(&user); err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
-	}
-	user := User{
-		Email: dto.Email,
-		Password: dto.Password,
 	}
 
 	token, err := loginUser(gormdb, &user)
@@ -286,7 +355,7 @@ func LoginUser(c *fiber.Ctx) error {
 	// 	HTTPOnly: true,
 	// })
 
-	return c.JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message" : "Login successful",
 		"Token" : token,
 	})	

@@ -11,13 +11,13 @@ import (
 
 type User struct {
 	gorm.Model
-	Email string `gorm:"unique"`
-	Password string
+	Email string `gorm:"unique" json:"email"`
+	Password string `json:"password"`
 }
 
 type UserDTO struct {
-	Email string `gorm:"unique"`
-	Password string
+	Email    string `gorm:"unique" json:"email" example:"user@example.com"`
+	Password string `json:"password" example:"securePassword123"`
 }
 
 func createUser(db *gorm.DB, user *User) error {
