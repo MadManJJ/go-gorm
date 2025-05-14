@@ -21,7 +21,6 @@ import (
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		// fmt.Println("Failed3")
 		log.Fatal("Error loading .env file")
 	}
 	host = "localhost"
@@ -110,18 +109,15 @@ func main() {
 	
 	app.Use("/books", authRequired) // * Middleware
 
+	// * Books
 	app.Get("/books", GetBooks)
-
 	app.Get("/books/:id", GetBook)
-
 	app.Post("/books", CreateBook)
-
 	app.Put("/books/:id", UpdateBook)
-
 	app.Delete("/books/:id", DeleteBook)
 
+	// * Auth
 	app.Post("/register", Register)
-
 	app.Post("/login", LoginUser)
 
 	app.Listen(":8080")
@@ -157,7 +153,6 @@ func main() {
 	// * --------------------------------
 }
 
-// GetBooks godoc
 // @Summary Get all books
 // @Description Get details of all books
 // @Tags books
@@ -173,7 +168,6 @@ func GetBooks(c *fiber.Ctx) error {
 	return c.JSON(getBooks(gormdb))
 }
 
-// GetBook godoc
 // @Summary Get book
 // @Description Get book by ID
 // @Tags books
@@ -195,7 +189,6 @@ func GetBook(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(book)
 }
 
-// CreateBook godoc
 // @Summary Create book
 // @Description Create book
 // @Tags books
@@ -227,7 +220,6 @@ func CreateBook(c *fiber.Ctx) error {
 	})
 }
 
-// UpdateBook godoc
 // @Summary Update book
 // @Description Update book
 // @Tags books
@@ -265,7 +257,6 @@ func UpdateBook(c *fiber.Ctx) error {
 		})
 	}
 
-// DeleteBook godoc
 // @Summary Delete book
 // @Description Delete book
 // @Tags books
@@ -293,7 +284,6 @@ func DeleteBook(c *fiber.Ctx) error {
 	})
 }
 
-// RegisterUser godoc
 // @Summary User register
 // @Description User register
 // @Tags auth
@@ -322,7 +312,6 @@ func Register(c *fiber.Ctx) error {
 	})
 }
 
-// LoginUser godoc
 // @Summary User login
 // @Description Authenticate user and return JWT token
 // @Tags auth
@@ -346,6 +335,7 @@ func LoginUser(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
+	// ! Doesn't work with swagger
 	// c.Cookie(&fiber.Cookie{
 	// 	Name:     "jwt",
 	// 	Value:    token,
